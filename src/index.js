@@ -39,16 +39,25 @@ try {
 const api = express.Router();
 
 api.post('/shorten', async (req, res) => {
-  const { url } = req.body;
+  const { url, customCode } = req.body;
 
   if (!url || (!url.startsWith('http://') && !url.startsWith('https://'))) {
     return res.status(400).json({ error: 'Invalid URL' });
   }
 
-  const code = randomCode(6).toLowerCase();
+  let code;
+  if (customCode) {
+    code = customCode.toLowerCase();
+  } else {
+    code = randomCode(6);
+  }
+
   await redis.set(code, url);
 
-  return res.status(200).json({ code, short: `/${code}` });
+  return res.status(200).json({
+    code,
+    short: `/${code}`,
+  });
 });
 
 api.get('/urls', async (req, res) => {
@@ -62,6 +71,14 @@ api.delete('/:code', async (req, res) => {
     return res.status(404).json({ error: 'Not found' });
   }
   return res.status(200).json({ deleted: req.params.code });
+});
+
+api.patch('/:code/toggle', async (req, res) => {
+  const result = await redis.toggle(req.params.code);
+  if (result === null) {
+    return res.status(404).json({ error: 'Not found' });
+  }
+  return res.status(200).json({ code: req.params.code, enabled: result });
 });
 
 api.get('/health', (req, res) => {
@@ -80,13 +97,14 @@ app.use('/ui', express.static(path.join(__dirname, '../www')));
 
 // short URL redirect — must be last
 app.get('/:code', async (req, res) => {
-  const url = await redis.get(req.params.code);
+  const { code } = req.params;
 
-  if (!url) {
-    return res.status(404).json({ error: 'Not found' });
-  }
+  const url = await redis.get(code);
+  if (!url) return res.status(404).json({ error: 'Not found' });
 
-  return res.redirect(302, url);
+  await redis.incrementClick(code);
+
+  res.redirect(302, url);
 });
 
 if (require.main === module) {

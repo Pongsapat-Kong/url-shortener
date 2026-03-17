@@ -45,6 +45,7 @@ api.post('/shorten', async (req, res) => {
     return res.status(400).json({ error: 'Invalid URL' });
   }
 
+<<<<<<< HEAD
   let code;
   if (customCode) {
     code = customCode.toLowerCase();
@@ -52,6 +53,9 @@ api.post('/shorten', async (req, res) => {
     code = randomCode(6);
   }
 
+=======
+  const code = randomCode(6);
+>>>>>>> origin/feat/counter
   await redis.set(code, url);
 
   return res.status(200).json({
@@ -97,14 +101,24 @@ app.use('/ui', express.static(path.join(__dirname, '../www')));
 
 // short URL redirect — must be last
 app.get('/:code', async (req, res) => {
+<<<<<<< HEAD
   const { code } = req.params;
+=======
+  const code = req.params.code;
+  const url = await redis.get(code);
+>>>>>>> origin/feat/counter
 
   const url = await redis.get(code);
   if (!url) return res.status(404).json({ error: 'Not found' });
 
+<<<<<<< HEAD
   await redis.incrementClick(code);
 
   res.redirect(302, url);
+=======
+  redis.incrementClick(code);
+  return res.redirect(302, url);
+>>>>>>> origin/feat/counter
 });
 
 if (require.main === module) {

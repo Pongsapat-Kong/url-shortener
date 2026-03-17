@@ -5,7 +5,7 @@ const client = new Redis({
   port: 6379,
 });
 
-const DEFAULT_TTL = 604800; // 7 days
+const DEFAULT_TTL = 604800;
 const CODES_SET = '__codes__';
 
 const redis = {
@@ -36,26 +36,10 @@ const redis = {
     }
   },
 
-  async incrementClick(code) {
-    const raw = await client.get(code);
-    if (!raw) return;
-    try {
-      const parsed = JSON.parse(raw);
-      parsed.clicks = (parsed.clicks || 0) + 1;
-      const ttl = await client.ttl(code);
-      if (ttl > 0) {
-        await client.set(code, JSON.stringify(parsed), 'EX', ttl);
-      } else {
-        await client.set(code, JSON.stringify(parsed));
-      }
-    } catch { /* ignore */ }
-  },
-
   async list() {
     const codes = await client.smembers(CODES_SET);
     if (!codes.length) return [];
 
-<<<<<<< HEAD
     const entries = await Promise.all(
       codes.map(async (code) => {
         const raw = await client.get(code);
@@ -85,21 +69,6 @@ const redis = {
         }
       })
     );
-=======
-    const entries = await Promise.all(codes.map(async (code) => {
-      const raw = await client.get(code);
-      if (!raw) {
-        await client.srem(CODES_SET, code); // clean up expired
-        return null;
-      }
-      try {
-        const { url, createdAt, clicks } = JSON.parse(raw);
-        return { code, url, createdAt, clicks: clicks || 0 };
-      } catch {
-        return { code, url: raw, createdAt: null, clicks: 0 };
-      }
-    }));
->>>>>>> origin/feat/counter
 
     return entries
       .filter(Boolean)

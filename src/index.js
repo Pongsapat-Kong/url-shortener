@@ -11,7 +11,6 @@ app.use(express.json());
 
 const PORT = process.env.PORT || 3000;
 
-// Read student ID from file
 let studentId = 'NOT_SET';
 try {
   const studentIdPath = process.env.STUDENT_ID_FILE || path.join(__dirname, '../student_id.txt');
@@ -22,7 +21,6 @@ try {
   console.error('Failed to read student ID:', err.message);
 }
 
-// Read build time from file (for Docker) or use ENV variable (for local dev)
 let buildTime = 'NOT_SET';
 try {
   const buildTimePath = process.env.BUILD_TIME_FILE || path.join(__dirname, '../build_time.txt');
@@ -45,7 +43,6 @@ api.post('/shorten', async (req, res) => {
     return res.status(400).json({ error: 'Invalid URL' });
   }
 
-<<<<<<< HEAD
   let code;
   if (customCode) {
     code = customCode.toLowerCase();
@@ -53,9 +50,6 @@ api.post('/shorten', async (req, res) => {
     code = randomCode(6);
   }
 
-=======
-  const code = randomCode(6);
->>>>>>> origin/feat/counter
   await redis.set(code, url);
 
   return res.status(200).json({
@@ -99,26 +93,15 @@ api.get('/info', (req, res) => {
 app.use('/api', api);
 app.use('/ui', express.static(path.join(__dirname, '../www')));
 
-// short URL redirect — must be last
 app.get('/:code', async (req, res) => {
-<<<<<<< HEAD
   const { code } = req.params;
-=======
-  const code = req.params.code;
-  const url = await redis.get(code);
->>>>>>> origin/feat/counter
 
   const url = await redis.get(code);
   if (!url) return res.status(404).json({ error: 'Not found' });
 
-<<<<<<< HEAD
   await redis.incrementClick(code);
 
   res.redirect(302, url);
-=======
-  redis.incrementClick(code);
-  return res.redirect(302, url);
->>>>>>> origin/feat/counter
 });
 
 if (require.main === module) {
